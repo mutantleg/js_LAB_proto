@@ -1,0 +1,440 @@
+
+<html>
+
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<style>
+canvas {
+  image-rendering: optimizeSpeed;             
+  image-rendering: -moz-crisp-edges;          
+  image-rendering: -webkit-optimize-contrast; 
+  image-rendering: -o-crisp-edges;            
+  image-rendering: pixelated;                 
+  -ms-interpolation-mode: nearest-neighbor;   
+}
+</style>
+</head>
+
+<body bgcolor="#aaBBcc" onresize="resizeHandle()" >
+
+<div style="text-align:center;" >
+<canvas id="myCanvas" width="320" height="200"  style="border:1px solid #000000;" />
+</div>
+
+
+<script> 
+   function resizeHandle()
+   {/*
+    if (window.innerWidth > 1024 && window.innerHeight > 768)
+    {  canvas.style.width = '1024px'; canvas.style.height = '768px';  return; }
+    if (window.innerWidth > 512 && window.innerHeight > 384)
+    {  canvas.style.width = '512px'; canvas.style.height = '384px';  return; }
+    canvas.style.width = '256px'; canvas.style.height = '192px'; */
+   }
+
+</script>
+
+ <script>
+  var canvas=document.getElementById("myCanvas");
+  canvas.style.width = '640px'; canvas.style.height = '480px';
+
+ 
+  //alpha:false works, use clearrect to test 
+  //ctx.clearRect(0,0,64,64);
+      
+  //var ctx = canvas.getContext("2d");
+  var ctx = canvas.getContext("2d", { alpha: false });
+  ctx.imageSmoothingEnabled = false;
+  var firstRun = 1; 
+  var debugMode = true;
+  
+  var load = 1; 
+  var sprLoad = 0;
+    
+  var vecSpr = [];
+  
+  var paused = false;
+  var prevPaused = false;
+ 
+  var gt = 0;  
+  var camx = 0;
+  var camy = 0;
+  var camz = 0;
+  var camYaw = 0;
+  var camPitch = 0;
+  
+
+  //need to predefine for chrome
+  function init() { console.log("wronginit"); } 
+  function update() { console.log("wrongupdate"); }
+  
+  function mainLoop()
+    {
+     if (load < 1) { return; }
+     //if (firstRun==1){ firstRun = 0; init(); }
+       ctx.save();
+        update();
+       ctx.restore();
+      
+    }//mainLoop
+    //seems to be faster than settimeout
+    setInterval(mainLoop, Math.floor(1000/60));
+</script>
+
+<script src="c_randlib.js" ></script> 
+<script src="c_fxrandlib.js" ></script> 
+<script src="c_keylib.js" ></script> 
+<script src="c_ratlib.js" ></script> 
+<script src="c_sprlib.js" ></script> 
+<script src="c_soundlib.js" ></script> 
+<script src="c_config.js" ></script> 
+
+<script src="i_font8x8.png.js" ></script> 
+<script src="i_font10x12.png.js" ></script> 
+<script src="c_menu.js" ></script>
+ 
+<script src="r_skinlib.js" ></script> 
+<script src="r_matlib.js" ></script> 
+<script src="r_trilib.js" ></script> 
+<script src="r_trimask.js" ></script> 
+<script src="r_trimaskshad.js" ></script> 
+<script src="r_camsprlib.js" ></script> 
+
+<script src="g_doorlib.js" ></script> 
+<script src="g_vislib.js" ></script> 
+<script src="g_raylib.js" ></script> 
+<script src="g_partlib.js" ></script> 
+<script src="g_actlib.js" ></script> 
+
+
+
+<!-- test level -->
+<!-- <script src="test.js" ></script>  -->
+<!-- 
+<script src="map03.js" ></script>  
+-->
+<script src="test.js" ></script> 
+
+
+<!-- assets -->
+<script src="fontspr.js" ></script> 
+<script src="spr21.js" ></script> 
+<!-- https://ezgif.com/image-to-datauri/ -->
+<!-- need to convert all images for datauri to work on chrome -->
+<!-- update: need to convert all images for datauri to work on firefox -->
+
+<script src="i_fontspr.png.js" ></script> 
+<script src="i_spr21.png.js" ></script> 
+<script src="i_tile.png.js" ></script> 
+
+<script>  
+
+
+  
+  //due to chromes bullshit
+  //we need to convert all images to string
+ //https://ezgif.com/image-to-datauri/
+ // update -- made own tool to do it 
+  
+  //i guess that makes storing tiles in a sprite
+  //more appealing
+  //loadImageToSkin("tile000.png", "tile0");  
+  //loadImageToSkin("tile001.png", "tile1");  
+  //loadImageToSkin("tile002.png", "tile2");  
+  //loadImageToSkin("tile.png", "tile");  
+ 
+      //loadImageToSkin("spr21.png", "spr21");  
+          loadImageToSkin(spr21png, "spr21");  
+      //loadTileToSkin("tile.png");
+          loadTileToSkin(tilepng);
+  
+  loadSound("zap.mp3", "zap",1);
+  loadSound("pick.mp3", "pick",1);
+  loadSound("door.mp3", "door",3);
+  loadSound("fire.mp3", "fire",3);
+  loadSound("deco.mp3", "deco",3);
+     
+  //using  rectangular pixels 
+  //to look more like a dos game 
+  setMatScreen(320, 200);
+
+
+  function drawLine(x0, y0, x1, y1)
+  {
+   ctx.beginPath();
+   ctx.moveTo(x0, y0);
+   ctx.lineTo(x1, y1);
+   ctx.stroke();   
+  }//drawline 
+  
+  function drawTri(sx0, sy0, w0, u0,v0,  sx1,sy1, w1, u1,v1,  sx2, sy2, w2, u2,v2)
+  {
+  
+    drawTriSkin(sx0, sy0, w0, u0,v0,  sx1,sy1, w1, u1,v1,  sx2, sy2, w2, u2,v2);
+
+  }//drawtri 
+        
+        
+  
+  var cori = {x:0, y:0, z:0, w:1};
+  var camOri = {x:0, y:0, z:0, w:1};
+  //change these to float array?
+  var projMat =  [1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1]; 
+  var viewMat =  [1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1]; 
+  var tempMat =  [1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1]; 
+  var identMat = [1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1]; 
+
+  var sprMat = [1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1]; 
+  
+  var tq = { x:0,y:0,z:0,w:1 }; //temp quat 
+  var tmat = [1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1];  
+      
+  function setObVec(vec, ax, ay, az, ori, sx, sy, sz)
+  {
+    quatSetVec(ori, vec);
+
+    //it seems to scale it in place .. argh 
+    //so now back to uniform 
+    vec[0] *= sx; vec[4] *= sy; vec[8]  *= sz;
+    vec[1] *= sx; vec[5] *= sy; vec[9]  *= sz;
+    vec[2] *= sx; vec[6] *= sy; vec[10] *= sz;
+   
+    vec[12] = ax;
+    vec[13] = ay;
+    vec[14] = az;
+     
+  }//setobvec
+   
+  
+  
+  var lastFpsTime = Date.now();
+  var curFps = 0;
+  var appTime = 0;
+  function countFps()
+  {
+    appTime += 1;
+    d = (Date.now() - lastFpsTime)/1000;
+    lastFpsTime = Date.now();
+    if (appTime % 5 == 0)
+    { curFps = (1.0 / d) | 0; }
+  }//countfps
+  
+  
+  function loadMapData(map)
+  {
+   if (map == undefined) { return; }
+   mw = map.mw;
+   mh = map.mh;
+   cw = map.cw; 
+   ch = map.ch;
+ 
+   vecGrid = map.vecGrid;
+   vecSide = map.vecSide;
+   vecBlob = [];
+   resetFlag();
+   resetDoor();
+   resetVis();
+    
+    gt = 0;
+    clearAct();
+    clearPart();
+    setRandSeed(1000);
+      map.loadEnt();
+  }//loadmapdata
+  
+  function init()
+  {
+    console.log("init");
+    
+    
+    //load config from storage 
+    loadConfig();
+    
+    //load map data here 
+    loadMapData(map_test);
+    
+
+  /*
+    a = addAct();
+    a.spec = 1;
+    a.cy = 16;
+    a.cx = 256;
+    a.cz = 256;
+    a.team = 1;
+    a.hp = 100;
+    playerId = a.id;
+    */
+    
+   // console.log("act ", a);
+    
+    //max 64 actors 
+    //64x64 -- 4096 collision checks max 
+    /*
+    setRandSeed(1000);
+    var i;
+    for (i=0;i<8;i+=1)
+    {
+      a = addAct();
+      a.spec = 3;
+      a.cy = 12;
+      a.size = 24;
+      a.team = 3;
+      a.sprName = "mutant0";
+      a.cx = getRand()*1024;
+      a.cz = getRand()*1024;
+    }//nexti
+ 
+ */
+   // loadEnt();
+   
+  }//init
+  
+
+  
+  function drawGame() {}
+  
+  function update()
+  { 
+    //need to move it here
+    //btw fuck chrome
+    if (firstRun==1){ firstRun = 0; init(); }
+  
+      mouseUpdate();
+      keyCheck(); 
+      
+    if (paused)
+    { limitMouse(0,0,320,240); }    
+    else {  wrapMouse(); }
+  
+  
+     var inFocus = (mouseLook == true);
+    //if (inFocus == false) { paused = true; }
+    
+    if (prevPaused != paused)
+    {
+      prevPaused = paused;
+      if (paused) { menuState = 0;  pauseAllSnd(); }
+      else { resumeAllSnd(); }
+    }//endif 
+    
+    keyTime += 1;
+    if (lastKey == keyTime-1) // && inFocus) 
+    {
+      if (lastKeyId==27) { paused = !paused; }
+      if (lastKeyId==80) { paused = !paused; }
+    }//endif
+
+    
+    
+     //updategame 
+    if (paused == false)
+    {
+          updateDoor();      
+          updateAct(vecAct);
+          updateBull(vecBull);
+          updatePart();
+
+      gt += 1;  
+    }//endif  
+    
+    var f;
+    f = frameSkip * 2;
+    if (paused == false && (f == 0 || (keyTime % f) == 0))
+    {     drawGame();    }
+    
+    ctx.putImageData(dat, 0, 0);
+    drawDebMap();
+    countFps();
+   
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#ffFFff";
+    ctx.fillText("gt:"+gt, 3, 16); 
+    ctx.fillText("fps:"+curFps, 3, 32); 
+    ctx.fillText("mvx:"+mvx, 3, 48); 
+    ctx.fillText("mvy:"+mvy, 3, 64); 
+    
+    
+     drawMenu();
+     
+  }//update 
+    
+    
+   function drawGame()
+   {
+    //rendergame
+ 
+             
+         var a;
+          a = getAct(playerId);
+          if (a!=0)
+          {
+          //need to clamp the coordinates a bit 
+          //but not too much 
+            camx = ((a.cx*100)|0)*0.01;
+            camz = ((a.cz*100)|0)*0.01;
+            //subtle cam walk bob 
+            camy = a.cy + Math.sin(a.walkFrame*0.135)*0.35;
+            camYaw = a.ang;
+            camPitch = a.pitch;
+            
+          }//endif
+             
+
+        resetQuat(cori);
+          quatRotAxis(cori, -camYaw+1.57, 1);
+          quatRotAxis(cori, camPitch, 0);
+             
+      //camera 
+        var camFov = 60;
+        var camAspect = 1.33;        
+        var camNear = 1;
+        var camFar = 8192;
+        
+        camAspect = rendw/rendh;
+        
+
+        setListen(camx,camy,camz);
+        setProjMat(tempMat, camFov, camAspect, camNear, camFar);
+        setViewMat(viewMat, camx, camy, camz,  cori.x, cori.y, cori.z, cori.w);
+        multMatrix(tempMat, viewMat, projMat); 
+        setFrustPlane(camFov, camAspect, camNear, camFar, camx, camy, camz, cori);
+        setFrustCutter();
+        clearDepth(1);
+
+        quatSetVec(cori, sprMat);
+
+        setTriColor(255,0,0);
+        drawTri = drawTriColor;
+        drawTri = drawTriSkin;
+        cullTri = true;
+        setSkinClamp();
+        setSkinWrap();
+        
+ //setSkinClamp();
+      //cullTri = false;      
+      //setSkin("tile2");
+      //drawQuad3(0, -512,-512, 512, 512, 0,0, 8,8);
+    
+     // setSkin("tile1");
+      //drawQuad3(256, -512,-512, 512, 512, 0,0, 8,8);
+      cullTri = true;  
+      
+      visTest(camx, camz, camYaw); //raycast test 
+      visBox(camx, camz, 1); //x tile area around player always visible 
+       renderUnOpt();
+        drawAct(vecAct);
+        drawBull(vecBull);  
+        drawPart();
+  
+  }//drawgame 
+
+    
+</script>
+
+
+
+</body>
+
+
+</html>
